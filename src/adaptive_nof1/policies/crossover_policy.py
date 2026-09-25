@@ -53,5 +53,9 @@ class CrossoverPolicy(Policy):
         ]
         return self.index_to_actions(action_index)
 
+    @property
+    def debug_data(self):
+        return self.policy.debug_data
+
     def available_actions(self):
         return [self.index_to_actions(index) for index in range(self.max_index)]
