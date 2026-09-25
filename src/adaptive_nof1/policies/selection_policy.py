@@ -30,7 +30,8 @@ class SelectionPolicy(Policy):
         history = copy.deepcopy(history)
         for observation in history.observations:
             actions = observation.treatment
-            actions.update(self.possible_actions[actions["selection_index"]])
+            for name, value in self.possible_actions[actions["selection_index"]].items():
+                actions.setdefault(name, value)
         return history
 
     @property
