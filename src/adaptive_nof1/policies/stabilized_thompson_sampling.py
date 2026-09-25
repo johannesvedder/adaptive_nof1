@@ -40,7 +40,7 @@ class StabilizedThompsonSampling(Policy):
     def choose_action(self, history, context, block_length=None):
         if (
             len(history) % self.posterior_update_interval == 0
-            or self.inference.trace is None
+            or getattr(self.inference, "trace", None) is None
         ):
             self.inference.update_posterior(history, self.number_of_actions)
 
