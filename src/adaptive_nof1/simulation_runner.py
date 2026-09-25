@@ -45,6 +45,8 @@ class SimulationRunner:
             history = self.pooledHistory
 
         action = self.policy.choose_action(history, context)
+        if self.policy.is_stopped:
+            return self
         counterfactual_actions = self.policy.available_actions()
         # Counterfactuals start from the same pre-outcome state and cannot advance
         # the live environment's RNG, calendar, or participant state.
