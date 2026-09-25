@@ -122,6 +122,8 @@ class PhysicalExerciseModel(BayesianModel):
                 columns=self.coefficient_names + ["pain_reduction"]
             )
         self._validate_data(history_df, include_outcome=True)
+        history_df = history_df.copy()
+        history_df["type"] = history_df["type"].astype("int64")
         if not self.model:
             self.setup_model()
 
