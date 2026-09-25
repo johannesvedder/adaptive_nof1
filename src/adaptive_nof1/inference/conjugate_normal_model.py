@@ -72,7 +72,7 @@ class ConjugateNormalModel:
     def beta_update(self, intervention):
         return (
             self.beta
-            + 0.5 * self.var(intervention)
+            + 0.5 * self.n(intervention) * self.var(intervention)
             + self.n(intervention)
             * self.l
             * (self.sample_mean(intervention) - self.mean) ** 2
