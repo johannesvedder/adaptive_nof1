@@ -51,7 +51,7 @@ class StabilizedThompsonSampling(Policy):
         probability_array = self.probability_array(context)
 
         # Standard value used in the paper, will range from 0 to 0.5
-        c = context["t"] / 2 * self.length
+        c = context["t"] / (2 * self.length)
         stabilized_probabilities = self.stabilize_probabilities(probability_array, c)
 
         action = random.choices(
