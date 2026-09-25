@@ -131,7 +131,10 @@ class PhysicalExerciseModel(BayesianModel):
         df["activity_index"] = range(number_of_treatments)
         activity_df = pandas.DataFrame(self.possible_actions)
 
-        df = pandas.concat([df, pandas.DataFrame(self.possible_actions)], axis=1)
+        df = pandas.concat(
+            [df.drop(columns=activity_df.columns, errors="ignore"), activity_df],
+            axis=1,
+        )
 
         # Eliminate duplicate columns
         df = df.loc[:, ~df.columns.duplicated()].copy()
