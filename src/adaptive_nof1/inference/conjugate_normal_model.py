@@ -21,8 +21,6 @@ class ConjugateNormalModel:
         self.outcome_name = outcome_name
         self.rng = numpy.random.default_rng(seed)
         self.sample_size = sample_size
-        invgamma.random_state = self.rng
-        norm.random_state = self.rng
 
         self.mean = mean
         self.l = l
@@ -81,14 +79,15 @@ class ConjugateNormalModel:
 
     def sample_normal_inverse_gamma(self, mean, l, alpha, beta, number_of_treatments):
         # Sample from our updated distributions
-        invgamma.random_state = self.rng
         sigma_squared_samples = invgamma.rvs(
-            a=alpha, scale=beta, size=(self.sample_size, number_of_treatments)
+            a=alpha, scale=beta, size=(self.sample_size, number_of_treatments),
+            random_state=self.rng,
         )
         samples = norm.rvs(
             loc=mean,
             scale=numpy.sqrt(sigma_squared_samples / l),
             size=(self.sample_size, number_of_treatments),
+            random_state=self.rng,
         )
         return samples
 
