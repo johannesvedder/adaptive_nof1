@@ -33,6 +33,18 @@ class PhysicalExerciseModel(BayesianModel):
     def data_to_treatment_indices(self, df):
         return pymc.intX((df[self.action_name]).to_numpy())
 
+    def _validate_data(self, df, include_outcome=False):
+        columns = self.coefficient_names + (["pain_reduction"] if include_outcome else [])
+        try:
+            values = df[columns].to_numpy(dtype=float)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("Missing or nonnumeric exercise model inputs") from exc
+        if not numpy.isfinite(values).all():
+            raise ValueError("Exercise model inputs must be finite")
+        types = df["type"].to_numpy(dtype=float)
+        if ((types < 0) | (types >= self.dimension_for_type) | (types != numpy.floor(types))).any():
+            raise ValueError("type must be an integer index within dimension_for_type")
+
     def setup_model(self):
         empty_df = pandas.DataFrame(
             columns=list(
@@ -103,6 +115,15 @@ class PhysicalExerciseModel(BayesianModel):
             )
 
     def update_posterior(self, history_df, _):
+        if hasattr(history_df, "to_df"):
+            history_df = history_df.to_df()
+        if history_df.empty:
+            history_df = history_df.reindex(
+                columns=self.coefficient_names + ["pain_reduction"]
+            )
+        self._validate_data(history_df, include_outcome=True)
+        history_df = history_df.copy()
+        history_df["type"] = history_df["type"].astype("int64")
         if not self.model:
             self.setup_model()
 
@@ -125,6 +146,8 @@ class PhysicalExerciseModel(BayesianModel):
             self.trace is not None
         ), "You called `approximate_max_probabilites` without updating the posterior"
 
+        if number_of_treatments != len(self.possible_actions) or number_of_treatments < 1:
+            raise ValueError("number_of_treatments must match nonempty possible_actions")
         df = pandas.DataFrame(
             [context] * number_of_treatments,
         )
@@ -135,6 +158,7 @@ class PhysicalExerciseModel(BayesianModel):
 
         # Eliminate duplicate columns
         df = df.loc[:, ~df.columns.duplicated()].copy()
+        self._validate_data(df)
 
         with self.model:
             pymc.set_data(
