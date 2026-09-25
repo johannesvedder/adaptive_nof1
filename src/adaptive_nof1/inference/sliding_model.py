@@ -19,3 +19,8 @@ class SlidingModel:
 
     def approximate_max_probabilities(self, number_of_treatments, context):
         return self.model.approximate_max_probabilities(number_of_treatments, context)
+
+    @property
+    def debug_data(self):
+        data = self.model.debug_data
+        return data() if callable(data) else data

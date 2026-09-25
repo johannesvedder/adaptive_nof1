@@ -39,6 +39,8 @@ class ExploreThenCommit(Policy):
     def choose_action(self, history, context):
         self.inference.update_posterior(history, self.number_of_actions)
         inference_debug_data = self.inference.debug_data
+        if callable(inference_debug_data):
+            inference_debug_data = inference_debug_data()
 
         if self.chosen_treatment is not None:
             self._debug_information += ["Commit"]

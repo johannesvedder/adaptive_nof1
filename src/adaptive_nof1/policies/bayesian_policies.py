@@ -66,7 +66,7 @@ class ThompsonSampling(Policy):
     def choose_action(self, history, context):
         if (
             len(history) % self.posterior_update_interval == 0
-            or self.inference.trace is None
+            or getattr(self.inference, "trace", None) is None
         ):
             self.inference.update_posterior(history, self.number_of_actions)
 
@@ -80,6 +80,8 @@ class ThompsonSampling(Policy):
             f"Probabilities for picking: {numpy.array_str(numpy.array(probability_array), precision=2, suppress_small=True)}, chose {action}"
         ]
         debug_data_from_model = self.inference.debug_data
+        if callable(debug_data_from_model):
+            debug_data_from_model = debug_data_from_model()
         self._debug_data.append(
             {**{"probabilities": probability_array}, **debug_data_from_model}
         )
@@ -104,7 +106,7 @@ class ClippedThompsonSampling(ThompsonSampling):
 
         if (
             len(history) % self.posterior_update_interval == 0
-            or self.inference.trace is None
+            or getattr(self.inference, "trace", None) is None
         ):
             self.inference.update_posterior(history, self.number_of_actions)
         probability_array = numpy.clip(
@@ -137,7 +139,7 @@ class ClippedHistoryAwareThompsonSampling(ThompsonSampling):
 
         if (
             len(history) % self.posterior_update_interval == 0
-            or self.inference.trace is None
+            or getattr(self.inference, "trace", None) is None
         ):
             self.inference.update_posterior(history, self.number_of_actions)
         probability_array = numpy.clip(

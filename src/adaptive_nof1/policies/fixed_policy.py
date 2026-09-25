@@ -34,6 +34,8 @@ class FixedPolicy(Policy):
                 f"Fixed Schedule, hypothetical probabilities for picking: {numpy.array_str(numpy.array(probability_array), precision=2, suppress_small=True)}"
             ]
             debug_data_from_model = self.inference.debug_data
+            if callable(debug_data_from_model):
+                debug_data_from_model = debug_data_from_model()
             self._debug_data.append(
                 {**{"probabilities": probability_array}, **debug_data_from_model}
             )

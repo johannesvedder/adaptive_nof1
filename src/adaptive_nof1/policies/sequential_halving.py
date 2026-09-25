@@ -67,6 +67,8 @@ class SequentialHalving(Policy):
     def choose_action(self, history, context):
         self.inference.update_posterior(history, self.number_of_actions)
         inference_debug_data = self.inference.debug_data
+        if callable(inference_debug_data):
+            inference_debug_data = inference_debug_data()
         self._debug_information += [""]
 
         if self.is_first_in_period(context):
