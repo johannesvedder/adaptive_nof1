@@ -89,6 +89,7 @@ class NormalKnownVariance:
             loc=mean,
             scale=numpy.sqrt(numpy.array(variance) + self.variance),
             size=(sample_size, number_of_treatments),
+            random_state=self.rng,
         )
         return samples
 
@@ -113,6 +114,7 @@ class NormalKnownVariance:
             loc=mean,
             scale=numpy.sqrt(numpy.array(variance)),
             size=(sample_size, number_of_treatments),
+            random_state=self.rng,
         )
         return samples
 
