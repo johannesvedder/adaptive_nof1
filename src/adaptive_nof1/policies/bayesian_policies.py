@@ -131,6 +131,7 @@ class ClippedHistoryAwareThompsonSampling(ThompsonSampling):
     def choose_action(self, history, context, block_length=None):
         if len(history) == 0:
             self._debug_information += ["len(History) == 0"]
+            self._debug_data.append({})
             return {
                 self.treatment_name: random.choices(range(self.number_of_actions))[0]
             }
@@ -156,10 +157,16 @@ class ClippedHistoryAwareThompsonSampling(ThompsonSampling):
         for action in last_three_actions:
             action_index = action
             probability_array[action_index] -= 0.2
+        # Penalties must not create negative sampling weights.
+        probability_array = numpy.maximum(probability_array, 0.0)
+        if probability_array.sum() == 0:
+            probability_array = numpy.ones(self.number_of_actions)
+        probability_array /= probability_array.sum()
         action = random.choices(
             range(self.number_of_actions), weights=probability_array
         )[0]
         self._debug_information += [
             f"Probabilities for picking: {numpy.array_str(probability_array, precision=2, suppress_small=True)}, chose {action}"
         ]
+        self._debug_data.append({"probabilities": probability_array})
         return {self.treatment_name: action}
