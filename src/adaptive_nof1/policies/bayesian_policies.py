@@ -156,6 +156,11 @@ class ClippedHistoryAwareThompsonSampling(ThompsonSampling):
         for action in last_three_actions:
             action_index = action
             probability_array[action_index] -= 0.2
+        # Penalties must not create negative sampling weights.
+        probability_array = numpy.maximum(probability_array, 0.0)
+        if probability_array.sum() == 0:
+            probability_array = numpy.ones(self.number_of_actions)
+        probability_array /= probability_array.sum()
         action = random.choices(
             range(self.number_of_actions), weights=probability_array
         )[0]
