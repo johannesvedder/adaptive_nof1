@@ -45,10 +45,14 @@ class SimulationRunner:
             history = self.pooledHistory
 
         action = self.policy.choose_action(history, context)
+        counterfactual_actions = self.policy.available_actions()
+        # Counterfactuals start from the same pre-outcome state and cannot advance
+        # the live environment's RNG, calendar, or participant state.
+        pre_outcome_model = copy.deepcopy(self.model) if counterfactual_actions else None
         outcome = self.model.observe_outcome(action, context)
         counterfactual_outcomes = [
-            self.model.observe_outcome(counterfactual_action, context)
-            for counterfactual_action in self.policy.available_actions()
+            copy.deepcopy(pre_outcome_model).observe_outcome(counterfactual_action, copy.deepcopy(context))
+            for counterfactual_action in counterfactual_actions
         ]
         observation = Observation(
             **{
