@@ -47,7 +47,7 @@ class CrossoverPolicy(Policy):
         action = self.policy.choose_action(self.transform_history(history), context)[
             self.policy.treatment_name
         ]
-        action_index = action - 1
+        action_index = action
         self._debug_information += [
             f"{self.crossover_index_treatment_name()}: {action_index}"
         ]
