@@ -26,7 +26,7 @@ class CrossoverPolicy(Policy):
         return f"CrossoverPolicy({self.policy})"
 
     def actions_to_index(self, actions):
-        return values_to_index(self.action_dimensions, list(actions.values()))
+        return values_to_index(self.action_dimensions, [actions[name] for name in self.action_names])
 
     def index_to_actions(self, index):
         return index_to_actions(index, self.action_dimensions, self.action_names)
