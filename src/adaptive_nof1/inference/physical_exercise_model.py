@@ -2,6 +2,7 @@ import numpy
 import pandas
 import arviz
 import pymc
+from numbers import Integral
 
 from adaptive_nof1.inference.bayes import BayesianModel
 
@@ -13,6 +14,12 @@ class PhysicalExerciseModel(BayesianModel):
         possible_actions,
         **kwargs,
     ):
+        if (
+            isinstance(dimension_for_type, bool)
+            or not isinstance(dimension_for_type, Integral)
+            or dimension_for_type < 1
+        ):
+            raise ValueError("dimension_for_type must be a positive integer")
         self.possible_actions = possible_actions
         self.dimension_for_type = dimension_for_type
         self.action_name = "activity_index"
@@ -34,16 +41,25 @@ class PhysicalExerciseModel(BayesianModel):
         return pymc.intX((df[self.action_name]).to_numpy())
 
     def _validate_data(self, df, include_outcome=False):
-        columns = self.coefficient_names + (["pain_reduction"] if include_outcome else [])
+        columns = self.coefficient_names + (
+            ["pain_reduction"] if include_outcome else []
+        )
         try:
             values = df[columns].to_numpy(dtype=float)
-        except (KeyError, TypeError, ValueError) as exc:
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
             raise ValueError("Missing or nonnumeric exercise model inputs") from exc
         if not numpy.isfinite(values).all():
             raise ValueError("Exercise model inputs must be finite")
-        types = df["type"].to_numpy(dtype=float)
-        if ((types < 0) | (types >= self.dimension_for_type) | (types != numpy.floor(types))).any():
+        types = values[:, 0]
+        if (
+            (types < 0)
+            | (types >= self.dimension_for_type)
+            | (types != numpy.floor(types))
+        ).any():
             raise ValueError("type must be an integer index within dimension_for_type")
+        validated = pandas.DataFrame(values, index=df.index, columns=columns)
+        validated["type"] = pymc.intX(types)
+        return validated
 
     def setup_model(self):
         empty_df = pandas.DataFrame(
@@ -121,9 +137,7 @@ class PhysicalExerciseModel(BayesianModel):
             history_df = history_df.reindex(
                 columns=self.coefficient_names + ["pain_reduction"]
             )
-        self._validate_data(history_df, include_outcome=True)
-        history_df = history_df.copy()
-        history_df["type"] = history_df["type"].astype("int64")
+        history_df = self._validate_data(history_df, include_outcome=True)
         if not self.model:
             self.setup_model()
 
@@ -147,8 +161,15 @@ class PhysicalExerciseModel(BayesianModel):
             self.trace is not None
         ), "You called `approximate_max_probabilites` without updating the posterior"
 
-        if number_of_treatments != len(self.possible_actions) or number_of_treatments < 1:
-            raise ValueError("number_of_treatments must match nonempty possible_actions")
+        if (
+            isinstance(number_of_treatments, bool)
+            or not isinstance(number_of_treatments, Integral)
+            or number_of_treatments != len(self.possible_actions)
+            or number_of_treatments < 1
+        ):
+            raise ValueError(
+                "number_of_treatments must match nonempty possible_actions"
+            )
         df = pandas.DataFrame(
             [context] * number_of_treatments,
         )
@@ -162,7 +183,7 @@ class PhysicalExerciseModel(BayesianModel):
 
         # Eliminate duplicate columns
         df = df.loc[:, ~df.columns.duplicated()].copy()
-        self._validate_data(df)
+        df = self._validate_data(df)
 
         with self.model:
             pymc.set_data(
