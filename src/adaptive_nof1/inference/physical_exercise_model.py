@@ -103,6 +103,14 @@ class PhysicalExerciseModel(BayesianModel):
             )
 
     def update_posterior(self, history_df, _):
+        if hasattr(history_df, "to_df"):
+            history_df = history_df.to_df()
+        if history_df.empty:
+            history_df = history_df.reindex(
+                columns=self.coefficient_names + ["pain_reduction"]
+            )
+        history_df = history_df.copy()
+        history_df["type"] = history_df["type"].astype("int64")
         if not self.model:
             self.setup_model()
 
