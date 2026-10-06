@@ -119,6 +119,7 @@ class PhysicalExerciseModel(BayesianModel):
                 }
             )
             self.trace = pymc.sample(2000, progressbar=False)
+            self._latest_posterior_predictive = None
 
     def approximate_max_probabilities(self, number_of_treatments, context):
         assert (

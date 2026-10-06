@@ -15,6 +15,7 @@ class BayesianModel:
         self.treatment_name = treatment_name
         self.outcome_name = outcome_name
         self._debug_data = {}
+        self._latest_posterior_predictive = None
 
     def get_upper_confidence_bounds(self, variable_name, epsilon: float = 0.05):
         predictive = getattr(self, "_latest_posterior_predictive", None)
@@ -215,6 +216,7 @@ class LinearAdditiveInferenceModel(BayesianModel):
                 dims="obs_id",
             )
             self.trace = pymc.sample(2000, progressbar=False)
+            self._latest_posterior_predictive = None
 
     def approximate_max_probabilities(self, number_of_treatments, context):
         assert (
@@ -328,6 +330,7 @@ class BernoulliLogItInferenceModel(BayesianModel):
                 dims="obs_id",
             )
             self.trace = pymc.sample(2000, progressbar=False)
+            self._latest_posterior_predictive = None
 
     def predict_for_history(self, history, number_of_treatments):
         df = history.to_df()
