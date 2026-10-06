@@ -79,11 +79,11 @@ class SequentialHalving(Policy):
                 k = len(self.treatments_to_consider) - math.ceil(
                     len(self.treatments_to_consider) / 2
                 )
-                to_remove = self.k_lowest_indices(probabilities, k)
+                surviving_probabilities = [probabilities[item] for item in self.treatments_to_consider]
+                local_indices = self.k_lowest_indices(surviving_probabilities, k)
+                to_remove = {self.treatments_to_consider[index] for index in local_indices}
                 self.treatments_to_consider = [
-                    item
-                    for index, item in enumerate(self.treatments_to_consider)
-                    if index not in to_remove
+                    item for item in self.treatments_to_consider if item not in to_remove
                 ]
 
             # generate a random permutation of treatments
