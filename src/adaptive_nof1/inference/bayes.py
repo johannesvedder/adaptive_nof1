@@ -15,10 +15,14 @@ class BayesianModel:
         self.treatment_name = treatment_name
         self.outcome_name = outcome_name
         self._debug_data = {}
+        self._latest_posterior_predictive = None
 
     def get_upper_confidence_bounds(self, variable_name, epsilon: float = 0.05):
+        predictive = getattr(self, "_latest_posterior_predictive", None)
+        if predictive is None:
+            predictive = self.trace.posterior_predictive
         confidence_bounds = arviz.hdi(
-            self.trace.posterior_predictive,
+            predictive,
             var_names=[variable_name],
             hdi_prob=1 - epsilon,
         )
@@ -212,6 +216,7 @@ class LinearAdditiveInferenceModel(BayesianModel):
                 dims="obs_id",
             )
             self.trace = pymc.sample(2000, progressbar=False)
+            self._latest_posterior_predictive = None
 
     def approximate_max_probabilities(self, number_of_treatments, context):
         assert (
@@ -230,14 +235,15 @@ class LinearAdditiveInferenceModel(BayesianModel):
                     ),
                 }
             )  # n * number_of_coefficients
-            pymc.sample_posterior_predictive(
+            prediction = pymc.sample_posterior_predictive(
                 self.trace,
                 var_names=["linear_regression"],
-                extend_inferencedata=True,
+                extend_inferencedata=False,
             )
 
+        self._latest_posterior_predictive = prediction.posterior_predictive
         max_indices = arviz.extract(
-            self.trace.posterior_predictive
+            prediction.posterior_predictive
         ).linear_regression.argmax(dim="obs_id")
         bin_counts = np.bincount(max_indices, minlength=number_of_treatments)
         return bin_counts / np.sum(bin_counts)
@@ -324,6 +330,7 @@ class BernoulliLogItInferenceModel(BayesianModel):
                 dims="obs_id",
             )
             self.trace = pymc.sample(2000, progressbar=False)
+            self._latest_posterior_predictive = None
 
     def predict_for_history(self, history, number_of_treatments):
         df = history.to_df()
@@ -366,14 +373,15 @@ class BernoulliLogItInferenceModel(BayesianModel):
                     ),
                 }
             )  # n * number_of_coefficients
-            pymc.sample_posterior_predictive(
+            prediction = pymc.sample_posterior_predictive(
                 self.trace,
                 var_names=["linear_regression_transformed"],
-                extend_inferencedata=True,
+                extend_inferencedata=False,
             )
 
+        self._latest_posterior_predictive = prediction.posterior_predictive
         max_indices = arviz.extract(
-            self.trace.posterior_predictive
+            prediction.posterior_predictive
         ).linear_regression_transformed.argmax(dim="obs_id")
         bin_counts = np.bincount(max_indices, minlength=number_of_treatments)
         return bin_counts / np.sum(bin_counts)

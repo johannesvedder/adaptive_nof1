@@ -119,6 +119,7 @@ class PhysicalExerciseModel(BayesianModel):
                 }
             )
             self.trace = pymc.sample(2000, progressbar=False)
+            self._latest_posterior_predictive = None
 
     def approximate_max_probabilities(self, number_of_treatments, context):
         assert (
@@ -147,13 +148,14 @@ class PhysicalExerciseModel(BayesianModel):
                     "pains": df["current_pain"],
                 }
             )
-            pymc.sample_posterior_predictive(
+            prediction = pymc.sample_posterior_predictive(
                 self.trace,
                 var_names=["outcome"],
-                extend_inferencedata=True,
+                extend_inferencedata=False,
             )
 
-        max_indices = arviz.extract(self.trace.posterior_predictive).outcome.argmax(
+        self._latest_posterior_predictive = prediction.posterior_predictive
+        max_indices = arviz.extract(prediction.posterior_predictive).outcome.argmax(
             dim="obs_id"
         )
         bin_counts = numpy.bincount(max_indices, minlength=number_of_treatments)
